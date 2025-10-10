@@ -11,7 +11,7 @@
 
 // ==================== WiFi Configuration ====================
 const char* ssid = "";           // Your WiFi name
-const char* password = "!!";   // Your WiFi password
+const char* password = "";   // Your WiFi password
 const char* serverUrl = ":8000/readings";  // Your laptop's IP #https the ipconfig in the commend prompt for ipv4
 
 // For local testing: "http://192.168.1.100:8000/readings"
