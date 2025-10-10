@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensor-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sensor-api
+  template:
+    metadata:
+      labels:
+        app: sensor-api
+    spec:
+      containers:
+      - name: api
+        image: sensor-api:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          value: postgresql://sensor_user:sensor_pass@postgres:5432/sensor_db
+        - name: REDIS_HOST
+          value: redis
+        - name: REDIS_PORT
+          value: "6379"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sensor-api
+spec:
+  type: LoadBalancer
+  selector:
+    app: sensor-api
+  ports:
+  - port: 8000
+    targetPort: 8000
