@@ -9,9 +9,9 @@
 #include <ArduinoJson.h>
 
 // WiFi Configuration
-const char* ssid = "YOUR_WIFI_NAME";
-const char* password = "YOUR_WIFI_PASSWORD";
-const char* serverUrl = "http://192.168.1.100:8000/readings";
+const char* ssid = "";
+const char* password = "";
+const char* serverUrl = "http://:8000/readings";
 
 unsigned long lastUploadTime = 0;
 const unsigned long uploadInterval = 10000;
@@ -231,16 +231,18 @@ void loop() {
     
     alertDisp = evaluate(co2 > tripLevel);
     
-    // Display on OLED
-    display.println("    CO2");
-    display.print("  ");
+    // Display on OLED - Compact
+    display.setTextSize(2);
+    display.println(" CO2");
+    display.print(" ");
     display.print(co2);
-    display.println(" PPM");
-    display.print("T:");
+    display.println(" ppm");
+    display.print(" ");
     display.print(temperature, 1);
-    display.print("C H:");
+    display.print("C ");
     display.print(humidity, 0);
     display.println("%");
+    // Leaves more room for WiFi status and alerts
     
     // Show WiFi status
     if (WiFi.status() == WL_CONNECTED) {
