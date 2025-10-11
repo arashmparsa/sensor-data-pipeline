@@ -1,5 +1,9 @@
 #include <Wire.h>
 
+//SCD30 I2C communication failure: previous SCD libraries incompatible or may have
+// hardware issues need diagnosed. Complete IoT pipeline ready but sensor communication blocked.
+
+
 void setup() {
   Serial.begin(115200);
   
