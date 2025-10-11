@@ -1,0 +1,34 @@
+# Navigate to your repository
+cd "C:\Users\Guest2\Personal\Github\sensor-data-pipeline"
+
+# Check current status
+git status
+
+# Initialize and check status 
+git init git status 
+
+# Add all changes to staging
+git add .
+
+# Commit with your diagnostic message 
+git commit -m "Add IoT CO2 monitoring pipeline with Kubernetes deployment, I2C sensing/checking, data pipeline with FastAPI, PostgreSQL, Redis, and Docker setup:
+- Complete FastAPI backend with PostgreSQL + Redis caching
+- Docker Compose and Kubernetes configurations/deployment
+- Real-time data preprocessing pipelines (50% faster testing)
+- ESP32 firmware with WiFi connectivity and cloud upload
+- SCD30 sensor integration (hardware troubleshooting needed)
+- CI/CD pipeline with GitHub Actions
+Note: SCD30 I2C communication blocked - investigating library compatibility vs hardware issue"
+
+# Push to remote repository
+git push -u origin main
+
+
+
+
+
+
+
+
+
+

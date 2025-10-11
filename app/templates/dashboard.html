@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Sensor Dashboard - Real-Time Monitoring</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .status-banner {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .status-item {
+            text-align: center;
+        }
+
+        .status-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .status-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 8px;
+        }
+
+        .status-indicator.active {
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            font-weight: 500;
+            color: #555;
+        }
+
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .large-chart {
+            grid-column: 1 / -1;
+        }
+
+        .alert {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert.warning {
+            background: #fef3c7;
+            border-left-color: #f59e0b;
+        }
+
+        .alert.danger {
+            background: #fee2e2;
+            border-left-color: #ef4444;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .sensor-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌡️ IoT Sensor Dashboard - Real-Time Monitoring</h1>
+
+        <div class="status-banner">
+            <div class="status-item">
+                <div class="status-label">System Status</div>
+                <div class="status-value">
+                    <span id="systemStatus">Active</span>
+                    <span class="status-indicator active"></span>
+                </div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Sensor ID</div>
+                <div class="status-value">
+                    <span class="sensor-badge" id="sensorId">SENSOR-001</span>
+                </div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Update Interval</div>
+                <div class="status-value">10s</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Data Points</div>
+                <div class="status-value" id="dataPoints">0</div>
+            </div>
+        </div>
+
+        <div id="alertContainer" class="alert"></div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>💨 CO2 Level</h2>
+                <div class="metric">
+                    <span class="metric-label">Current</span>
+                    <span class="metric-value" id="currentCO2">-- ppm</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Average</span>
+                    <span id="avgCO2">-- ppm</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Max</span>
+                    <span id="maxCO2">-- ppm</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Min</span>
+                    <span id="minCO2">-- ppm</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🌡️ Temperature</h2>
+                <div class="metric">
+                    <span class="metric-label">Current</span>
+                    <span class="metric-value" id="currentTemp">-- °C</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Average</span>
+                    <span id="avgTemp">-- °C</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>💧 Humidity</h2>
+                <div class="metric">
+                    <span class="metric-label">Current</span>
+                    <span class="metric-value" id="currentHumidity">-- %</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Status</span>
+                    <span id="humidityStatus">Normal</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📊 Statistics</h2>
+                <div class="metric">
+                    <span class="metric-label">Samples (1h)</span>
+                    <span id="sampleCount">0</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Data Source</span>
+                    <span id="dataSource">--</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Last Update</span>
+                    <span id="lastUpdate">Never</span>
+                </div>
+            </div>
+
+            <div class="card large-chart">
+                <h2>📈 Real-Time CO2 Trend (Last 20 readings)</h2>
+                <div class="chart-container">
+                    <canvas id="co2Chart"></canvas>
+                </div>
+            </div>
+
+            <div class="card large-chart">
+                <h2>🌡️ Temperature & Humidity Trend</h2>
+                <div class="chart-container">
+                    <canvas id="tempHumidChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>🔄 Auto-refreshing every 5 seconds | 📡 Connected to FastAPI Backend</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">
+                <a href="/docs" style="color: white; text-decoration: underline;">API Documentation</a> |
+                <a href="/readings/history/SENSOR-001?hours=24" style="color: white; text-decoration: underline;">Download 24h History</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        const SENSOR_ID = 'SENSOR-001';
+        const API_BASE = '';
+
+        // CO2 Chart Configuration
+        const co2Ctx = document.getElementById('co2Chart').getContext('2d');
+        const co2Chart = new Chart(co2Ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'CO2 (ppm)',
+                    data: [],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: 'CO2 (ppm)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Temperature & Humidity Chart
+        const tempHumidCtx = document.getElementById('tempHumidChart').getContext('2d');
+        const tempHumidChart = new Chart(tempHumidCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Temperature (°C)',
+                        data: [],
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Humidity (%)',
+                        data: [],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Temperature (°C)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Humidity (%)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+
+        let dataPointCount = 0;
+
+        function showAlert(message, type = 'warning') {
+            const alertDiv = document.getElementById('alertContainer');
+            alertDiv.textContent = message;
+            alertDiv.className = `alert ${type} show`;
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+            }, 5000);
+        }
+
+        async function fetchLatestReading() {
+            try {
+                const response = await fetch(`${API_BASE}/readings/latest/${SENSOR_ID}`);
+                const data = await response.json();
+
+                if (data.data) {
+                    const reading = data.data;
+                    document.getElementById('currentCO2').textContent = reading.co2_ppm.toFixed(1) + ' ppm';
+                    document.getElementById('currentTemp').textContent = reading.temperature.toFixed(1) + '°C';
+                    document.getElementById('currentHumidity').textContent = reading.humidity.toFixed(1) + '%';
+                    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+
+                    // Update charts
+                    const timeLabel = new Date().toLocaleTimeString();
+
+                    // CO2 Chart
+                    co2Chart.data.labels.push(timeLabel);
+                    co2Chart.data.datasets[0].data.push(reading.co2_ppm);
+
+                    // Keep only last 20 points
+                    if (co2Chart.data.labels.length > 20) {
+                        co2Chart.data.labels.shift();
+                        co2Chart.data.datasets[0].data.shift();
+                    }
+                    co2Chart.update();
+
+                    // Temp/Humidity Chart
+                    tempHumidChart.data.labels.push(timeLabel);
+                    tempHumidChart.data.datasets[0].data.push(reading.temperature);
+                    tempHumidChart.data.datasets[1].data.push(reading.humidity);
+
+                    if (tempHumidChart.data.labels.length > 20) {
+                        tempHumidChart.data.labels.shift();
+                        tempHumidChart.data.datasets[0].data.shift();
+                        tempHumidChart.data.datasets[1].data.shift();
+                    }
+                    tempHumidChart.update();
+
+                    dataPointCount++;
+                    document.getElementById('dataPoints').textContent = dataPointCount;
+
+                    // CO2 level alerts
+                    if (reading.co2_ppm > 1000) {
+                        showAlert('⚠️ High CO2 detected! Consider ventilation.', 'warning');
+                    }
+                    if (reading.co2_ppm > 2000) {
+                        showAlert('🚨 CRITICAL: CO2 levels dangerously high!', 'danger');
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching latest reading:', error);
+                document.getElementById('systemStatus').textContent = 'Error';
+            }
+        }
+
+        async function fetchStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/stats/${SENSOR_ID}`);
+                const data = await response.json();
+
+                if (data.stats) {
+                    const stats = data.stats;
+                    document.getElementById('avgCO2').textContent = stats.avg_co2.toFixed(1) + ' ppm';
+                    document.getElementById('maxCO2').textContent = stats.max_co2.toFixed(1) + ' ppm';
+                    document.getElementById('minCO2').textContent = stats.min_co2.toFixed(1) + ' ppm';
+                    document.getElementById('avgTemp').textContent = stats.avg_temp.toFixed(1) + '°C';
+                    document.getElementById('sampleCount').textContent = stats.sample_count;
+                    document.getElementById('dataSource').textContent = data.source === 'cache' ? '⚡ Cache' : '💾 Database';
+                }
+            } catch (error) {
+                console.error('Error fetching statistics:', error);
+            }
+        }
+
+        // Initial load
+        fetchLatestReading();
+        fetchStatistics();
+
+        // Auto-refresh every 5 seconds
+        setInterval(fetchLatestReading, 5000);
+        setInterval(fetchStatistics, 10000);
+
+        console.log('🚀 IoT Dashboard initialized - polling every 5 seconds');
+    </script>
+</body>
+</html>

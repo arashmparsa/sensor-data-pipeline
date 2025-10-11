@@ -1,15 +1,21 @@
 from fastapi import FastAPI, Depends, BackgroundTasks
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import redis
 import json
 from typing import List
 import os
+from pathlib import Path
 
 from .database import SessionLocal, SensorReading
 from .sensor_simulator import SensorSimulator
 
 app = FastAPI(title="IoT Sensor Data Pipeline")
+
+# Serve dashboard HTML
+templates_dir = Path(__file__).parent / "templates"
 
 # Redis connection
 redis_client = redis.Redis(
@@ -28,8 +34,17 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def read_root():
+    '''Serve the dashboard GUI'''
+    dashboard_path = templates_dir / "dashboard.html"
+    if dashboard_path.exists():
+        return dashboard_path.read_text()
+    return {"status": "IoT Sensor Pipeline Active", "version": "1.0.0"}
+
+@app.get("/health")
+def health_check():
+    '''API health check endpoint'''
     return {"status": "IoT Sensor Pipeline Active", "version": "1.0.0"}
 
 @app.post("/readings")
