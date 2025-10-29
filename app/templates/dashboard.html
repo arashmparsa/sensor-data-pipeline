@@ -197,7 +197,7 @@
             <div class="status-item">
                 <div class="status-label">Sensor ID</div>
                 <div class="status-value">
-                    <span class="sensor-badge" id="sensorId">SENSOR-001</span>
+                    <span class="sensor-badge" id="sensorId">ESP32_CO2_SYSTEM</span>
                 </div>
             </div>
             <div class="status-item">
@@ -292,13 +292,13 @@
             <p>🔄 Auto-refreshing every 5 seconds | 📡 Connected to FastAPI Backend</p>
             <p style="margin-top: 10px; font-size: 0.9em;">
                 <a href="/docs" style="color: white; text-decoration: underline;">API Documentation</a> |
-                <a href="/readings/history/SENSOR-001?hours=24" style="color: white; text-decoration: underline;">Download 24h History</a>
+                <a href="/readings/history/ESP32_CO2_SYSTEM?hours=24" style="color: white; text-decoration: underline;">Download 24h History</a>
             </p>
         </footer>
     </div>
 
     <script>
-        const SENSOR_ID = 'SENSOR-001';
+        const SENSOR_ID = 'ESP32_CO2_SYSTEM';  // Your real ESP32 sensor!
         const API_BASE = '';
 
         // CO2 Chart Configuration
@@ -421,8 +421,10 @@
 
         async function fetchLatestReading() {
             try {
+                console.log('Fetching data from:', `${API_BASE}/readings/latest/${SENSOR_ID}`);
                 const response = await fetch(`${API_BASE}/readings/latest/${SENSOR_ID}`);
                 const data = await response.json();
+                console.log('Received data:', data);
 
                 if (data.data) {
                     const reading = data.data;
@@ -430,6 +432,8 @@
                     document.getElementById('currentTemp').textContent = reading.temperature.toFixed(1) + '°C';
                     document.getElementById('currentHumidity').textContent = reading.humidity.toFixed(1) + '%';
                     document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                    document.getElementById('systemStatus').textContent = 'Active';
+                    document.querySelector('.status-indicator').classList.add('active');
 
                     // Update charts
                     const timeLabel = new Date().toLocaleTimeString();
@@ -467,10 +471,17 @@
                     if (reading.co2_ppm > 2000) {
                         showAlert('🚨 CRITICAL: CO2 levels dangerously high!', 'danger');
                     }
+                } else {
+                    // No data available
+                    document.getElementById('systemStatus').textContent = 'No Data';
+                    document.querySelector('.status-indicator').classList.remove('active');
+                    showAlert('⚠️ No sensor data received yet. Check ESP32 connection and WiFi credentials.', 'warning');
                 }
             } catch (error) {
                 console.error('Error fetching latest reading:', error);
                 document.getElementById('systemStatus').textContent = 'Error';
+                document.querySelector('.status-indicator').classList.remove('active');
+                showAlert('❌ Cannot connect to API. Is the server running?', 'danger');
             }
         }
 
@@ -494,6 +505,10 @@
         }
 
         // Initial load
+        console.log('🚀 IoT Dashboard initializing...');
+        console.log('Sensor ID:', SENSOR_ID);
+        console.log('API Base:', API_BASE);
+
         fetchLatestReading();
         fetchStatistics();
 
@@ -501,7 +516,7 @@
         setInterval(fetchLatestReading, 5000);
         setInterval(fetchStatistics, 10000);
 
-        console.log('🚀 IoT Dashboard initialized - polling every 5 seconds');
+        console.log('✅ Dashboard initialized - polling every 5 seconds');
     </script>
 </body>
 </html>

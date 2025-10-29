@@ -8,10 +8,10 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
-// WiFi Configuration
-const char* ssid = "";
-const char* password = "";
-const char* serverUrl = "http://:8000/readings";
+// WiFi Configuration - UPDATE THESE VALUES!
+const char* ssid = "PARSA-HOME";           // Replace with your WiFi name
+const char* password = "Oghabe99!!";   // Replace with your WiFi password
+const char* serverUrl = "http://10.0.0.109:8000/readings";  // Replace YOUR_LAPTOP_IP with actual IP (e.g., 192.168.1.100)
 
 unsigned long lastUploadTime = 0;
 const unsigned long uploadInterval = 10000;
@@ -213,15 +213,21 @@ void setup() {
 }
 
 void loop() {
-  if (airSensor.dataAvailable()) {  
+  // Auto-reconnect WiFi if disconnected
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi disconnected! Reconnecting...");
+    connectToWiFi();
+  }
+
+  if (airSensor.dataAvailable()) {
     digitalWrite(blueLed, HIGH);
     display.setCursor(0,0);
     display.clearDisplay();
-    
+
     int co2 = airSensor.getCO2();
     float temperature = airSensor.getTemperature();
     float humidity = airSensor.getHumidity();
-    
+
     // Upload to API every 10 seconds
     unsigned long currentTime = millis();
     if (WiFi.status() == WL_CONNECTED && currentTime - lastUploadTime >= uploadInterval) {
